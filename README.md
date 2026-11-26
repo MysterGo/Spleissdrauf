@@ -37,7 +37,9 @@ Jeder neue Tagebuch-Eintrag wird einmal angezeigt („Neue Erkenntnis“) und mu
 ## ATP-Haushalt
 
 Start mit 15 ATP. Belohnungen sind halbiert, Fehler kosten das 1,5-Fache (Werte `GAIN` und `COST` oben in `src/game.html`). Falsche Kombinationen, falsch gezogene Moleküle, falsche Tagebuch-Felder und Mister Gs Hilfe kosten ATP.
-Bei 0 ATP gibt es kein Essen mehr, sondern ein Duell **Schere, Stein, Papier gegen Mister G**: Wer zuerst 3 Runden gewinnt. Sieg = 12 ATP, Niederlage = **Zelltod**, das Kapitel beginnt von vorn (mit 15 ATP).
+Bei 0 ATP gibt es kein Essen mehr, sondern ein Duell **Schere, Stein, Papier gegen Mister G**: Wer zuerst 3 Runden gewinnt. Sieg = 12 ATP, Niederlage = **Zelltod**, das Kapitel beginnt von vorn (mit 15 ATP). Beim Duell schütteln beide dreimal die Faust („Schere … Stein … Papier!“), dann werden die Hände aufgedeckt.
+
+**Mini-Game:** Nach dem Rennen gibt es den Knopf **✊ Mini-Game** (in der Auswertung, im Menü ☰ und auf dem Titelbild): Schere, Stein, Papier gegen Mister G, nur zum Spaß, ohne ATP-Folgen.
 
 ## Bedienung
 

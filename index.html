@@ -291,6 +291,23 @@ table.cmp td.wrong{animation:shake .4s;background:#FFD6D6}
 .rps-btns{display:flex;gap:16px;justify-content:center;margin:12px 0}
 .rpsb{border:none;border-radius:18px;width:150px;height:130px;background:linear-gradient(#FFF6DF,#EADBB8);box-shadow:0 5px 0 #B8A57E;font-size:20px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .rpsb span{font-size:56px;line-height:1.1}.rpsb:disabled{opacity:.4}
+.rps-arena{display:flex;align-items:center;justify-content:center;gap:40px;margin:22px 0 2px}
+.rps-side{display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;font-size:17px;color:#6E675C;width:200px}
+.rps-hand{font-size:96px;line-height:1;height:110px;display:flex;align-items:center;justify-content:center}
+.rps-hand.me{transform:scaleX(-1)}.rps-hand.shake{animation:rpsShake .42s ease-in-out 3}
+.rps-hand.me.shake{animation-name:rpsShakeM}.rps-hand.pop{animation:rpsPop .35s cubic-bezier(.3,1.7,.5,1)}
+@keyframes rpsShake{0%,100%{transform:translateY(0) rotate(0)}45%{transform:translateY(-26px) rotate(-14deg)}}
+@keyframes rpsShakeM{0%,100%{transform:scaleX(-1) translateY(0) rotate(0)}45%{transform:scaleX(-1) translateY(-26px) rotate(-14deg)}}
+@keyframes rpsPop{from{transform:scale(.4)}}.rps-hand.me.pop{animation-name:rpsPopM}@keyframes rpsPopM{from{transform:scaleX(-1) scale(.4)}}
+.rps-mg{position:relative;width:250px;height:262px}
+.rps-mg .mgface{position:absolute;left:78px;top:0;width:150px;height:150px;border-radius:50%;border:5px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.3);z-index:3;object-fit:cover}
+.rps-mg .mgbody{position:absolute;left:103px;top:132px;width:100px;height:118px;z-index:2}
+.rps-mg .garm{position:absolute;left:52px;top:158px;width:66px;height:76px;z-index:4}
+.rps-mg .garm .sl{position:absolute;right:0;top:12px;width:66px;height:22px;border-radius:11px;background:linear-gradient(#FFFFFF,#DCDCD6);border:2px solid #2A1E16}
+.rps-mg .garm .rps-hand{position:absolute;left:0;top:-4px;font-size:64px;height:76px;width:66px}
+.rps-mg .garm.shake{animation:rpsShake .42s ease-in-out 3}
+.rps-mg .nm{position:absolute;left:0;right:0;bottom:-4px;text-align:center;font-weight:700;font-size:17px;color:#6E675C}
+.rps-call{font-family:var(--fH);font-weight:900;font-size:34px;color:#C8424E;min-width:150px;min-height:44px}
 .rps-g{width:110px;height:110px;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.3)}
 /* Tagebuch-Prüfung */
 table.cmp td.cell{cursor:pointer}table.cmp td.cell.has{background:#fff}table.cmp td.cell.empty{background:#FFF8E4;outline:2px dashed #C9A24A;outline-offset:-2px;color:#B8A57E}
@@ -677,14 +694,29 @@ async function energyCrisis(){if(crisisOn)return;crisisOn=true;
   else{await say('G','Tja. <b>Zelltod.</b> Ohne ATP läuft in der Zelle nichts mehr. Zurück an den Anfang des Kapitels!');
     if(CUR){const c=CUR;CUR=null;c()}restoreCkpt()}
   hud();save();crisisOn=false}
-function rps(){return new Promise(res=>{let me=0,g=0;const L=$('#duel');const O=[['stein','✊','Stein'],['schere','✌️','Schere'],['papier','✋','Papier']];const beats={stein:'schere',schere:'papier',papier:'stein'};
-  const draw=(msg)=>{L.innerHTML=`<div class="lcard" style="width:780px"><div class="lhead"><span class="ltag">Duell</span><h3>Schere, Stein, Papier gegen Mister G</h3></div><div class="ltext" style="text-align:center"><img src="${MG_FACE}" class="rps-g"><div class="rps-score">Du ${me} : ${g} Mister G</div><div class="rps-msg">${msg||'Wer zuerst 3 Runden gewinnt, überlebt.'}</div><div class="rps-btns">${O.map(([k,e,n])=>`<button class="rpsb" data-k="${k}"><span>${e}</span>${n}</button>`).join('')}</div></div></div>`;L.classList.add('on');
-    $$('.rpsb',L).forEach(b=>b.onclick=()=>{const k=b.dataset.k,c=O[Math.floor(Math.random()*3)];let m;
-      if(c[0]===k)m=`Mister G: ${c[1]} ${c[2]} – unentschieden. Nochmal!`;
-      else if(beats[k]===c[0]){me++;m=`Mister G: ${c[1]} ${c[2]} – <b>Punkt für dich!</b> ${rnd(['Pff.','Glück gehabt.','Das war Absicht. Pädagogisch wertvoll.'])}`}
-      else{g++;m=`Mister G: ${c[1]} ${c[2]} – <b>Punkt für mich!</b> ${rnd(['Hab ich im Referendariat geübt.','Lehrer gewinnen immer.','Checkst mal wieder nix, oder?'])}`}
-      if(me>=3||g>=3){draw(m+`<br><b style="font-size:24px">${me>=3?'Gewonnen – du lebst!':'Verloren …'}</b>`);$$('.rpsb',L).forEach(x=>x.disabled=true);setTimeout(()=>{L.classList.remove('on');L.innerHTML='';res(me>=3)},2000)}else draw(m)})};
-  draw()})}
+function rps(){return new Promise(res=>{let me=0,g=0,busyR=false;const L=$('#duel');const O=[['stein','✊','Stein'],['schere','✌️','Schere'],['papier','✋','Papier']];const beats={stein:'schere',schere:'papier',papier:'stein'};
+  L.innerHTML=`<div class="lcard" style="width:800px"><div class="lhead"><span class="ltag">Duell</span><h3>Schere, Stein, Papier gegen Mister G</h3></div><div class="ltext" style="text-align:center">
+    <div class="rps-score" id="rsc">Du 0 : 0 Mister G</div>
+    <div class="rps-arena"><div class="rps-side"><div class="rps-hand me" id="hMe">✊</div>Du</div><div class="rps-call" id="rcall">VS</div><div class="rps-mg"><img class="mgface" src="${MG_FACE}" alt="Mister G">
+      <svg class="mgbody" viewBox="0 0 100 118"><path d="M14 30 Q50 14 86 30 L92 92 Q50 100 8 92Z" fill="#F4F2EC" stroke="#2A1E16" stroke-width="2.5"/><path d="M38 22 L50 58 L62 22 Q50 26 38 22Z" fill="#26262A"/><path d="M38 22 L46 62 L34 92 M62 22 L54 62 L66 92" stroke="#2A1E16" stroke-width="2" fill="none"/><rect x="64" y="66" width="14" height="12" rx="2" fill="none" stroke="#2A1E16" stroke-width="1.6"/><path d="M68 66 v-6 M72 66 v-7" stroke="#3D7FB8" stroke-width="2.4"/><path d="M86 34 L94 80 Q96 88 88 86" fill="#F4F2EC" stroke="#2A1E16" stroke-width="2.5"/><rect x="26" y="94" width="18" height="20" rx="4" fill="#2E3A5A"/><rect x="56" y="94" width="18" height="20" rx="4" fill="#2E3A5A"/></svg>
+      <div class="garm" id="gArm"><div class="rps-hand" id="hG">✊</div></div><div class="nm">Mister G</div></div></div>
+    <div class="rps-msg" id="rmsg">Wer zuerst 3 Runden gewinnt, überlebt. Wähl deine Hand!</div>
+    <div class="rps-btns">${O.map(([k,e,n])=>`<button class="rpsb" data-k="${k}"><span>${e}</span>${n}</button>`).join('')}</div></div></div>`;L.classList.add('on');
+  const hMe=$('#hMe',L),hG=$('#hG',L),call=$('#rcall',L),msg=$('#rmsg',L),btns=$$('.rpsb',L);
+  const anim=(el,c)=>{el.classList.remove('shake','pop');void el.offsetWidth;el.classList.add(c)};
+  btns.forEach(b=>b.onclick=async()=>{if(busyR)return;busyR=true;btns.forEach(x=>x.disabled=true);const k=b.dataset.k,mine=O.find(o=>o[0]===k),c=O[Math.floor(Math.random()*3)];
+    hMe.textContent='✊';hG.textContent='✊';msg.innerHTML='&nbsp;';anim(hMe,'shake');anim($('#gArm',L),'shake');
+    for(const w of['Schere …','Stein …','Papier!']){call.textContent=w;await sleep(420)}
+    hMe.textContent=mine[1];hG.textContent=c[1];anim(hMe,'pop');anim(hG,'pop');let m;
+    if(c[0]===k){call.textContent='Gleich!';m=`Beide ${c[2]} – unentschieden. Nochmal!`}
+    else if(beats[k]===c[0]){me++;call.textContent='Punkt!';m=`${mine[2]} schlägt ${c[2]} – <b>Punkt für dich!</b> ${rnd(['Pff.','Glück gehabt.','Das war Absicht. Pädagogisch wertvoll.'])}`}
+    else{g++;call.textContent='Autsch!';m=`${c[2]} schlägt ${mine[2]} – <b>Punkt für Mister G!</b> ${rnd(['Hab ich im Referendariat geübt.','Lehrer gewinnen immer.','Checkst mal wieder nix, oder?'])}`}
+    $('#rsc',L).textContent=`Du ${me} : ${g} Mister G`;msg.innerHTML=m;
+    if(me>=3||g>=3){msg.innerHTML=m+`<br><b style="font-size:24px">${me>=3?'Gewonnen – du lebst!':'Verloren …'}</b>`;setTimeout(()=>{L.classList.remove('on');L.innerHTML='';res(me>=3)},2200);return}
+    await sleep(500);busyR=false;btns.forEach(x=>x.disabled=false)})})}
+let miniOn=false;
+async function miniGame(){if(miniOn||crisisOn)return;miniOn=true;const won=await rps();
+  await say('G',won?rnd(['Pff. Anfängerglück. Revanche?','Okay, okay. Du darfst dich jetzt Spleiß-Meister nennen. Inoffiziell.','Ich hab dich gewinnen lassen. Pädagogik!']):rnd(['Lehrer gewinnen immer. Steht so im Schulgesetz.','Checkst mal wieder nix, oder? Nochmal!','Tja. Übung macht den Meister – und ich übe seit dem Referendariat.']));miniOn=false}
 function snap(){const c=JSON.parse(JSON.stringify(S));delete c.ckpt;return c}
 function restoreCkpt(){const c=S.ckpt;if(c){S=JSON.parse(JSON.stringify(c));S.ckpt=c}else{S=fresh();S.scene='bakt'}S.atp=START_ATP;endPlay();closeModal();save();render();toast('Zurück zum Anfang des Kapitels – mit '+START_ATP+' ATP')}
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -1359,8 +1391,8 @@ function results(A,B){const a=Math.floor(A.prot),b=Math.floor(B.prot)+5*B.var;S.
   $('#race').insertAdjacentHTML('beforeend',`<div class="rpanel"><h2>${win}</h2><div class="rgrid"><div style="background:#E3F0D6"><b>Prokaryot</b><br><b style="font-size:30px">${a}</b> Punkte<br>${Math.floor(A.prot)} Proteine (alle gleich) · ${A.loss} mRNAs abgebaut</div>
    <div style="background:#DCE2F2"><b>Eukaryot</b><br><b style="font-size:30px">${b}</b> Punkte<br>${Math.floor(B.prot)} Proteine + <b>${B.var} Varianten</b> (${B.vset.size} verschiedene Sorten aus einem Gen) · ${B.shield} Treffer vom Poly-A abgefedert</div></div>
    <div class="rq"><b>Diskutiert zu zweit:</b><br>1. Warum lag Team Kernlos am Anfang vorn?<br>2. Was hat Team Zellstadt geholfen – und was kann nur Team Zellstadt?<br>3. Warum ist schneller mRNA-Abbau für Bakterien trotzdem sinnvoll?<br>4. Wer würde gewinnen, wenn das Rennen 10 Stunden dauert? Begründet!</div>
-   <div class="row" style="justify-content:center"><button class="btn primary" id="ragain">Plätze tauschen & nochmal</button><button class="btn" id="rend">Zurück in die Zelle</button></div></div>`);
-  $('#ragain').onclick=()=>startRace();$('#rend').onclick=async()=>{$('#race').classList.remove('on');$('#race').innerHTML='';if(!S.f.raceOutro){S.f.raceOutro=1;await say('G','Und? <b>Kernlos glücklich?</b> … Kommt drauf an, ne? Genau das ist die Antwort für die Klausur. Aber bitte mit Begründung.')}render()}}
+   <div class="row" style="justify-content:center"><button class="btn primary" id="ragain">Plätze tauschen & nochmal</button><button class="btn amber" id="rmini">✊ Mini-Game</button><button class="btn" id="rend">Zurück in die Zelle</button></div></div>`);
+  $('#ragain').onclick=()=>startRace();$('#rmini').onclick=()=>miniGame();$('#rend').onclick=async()=>{$('#race').classList.remove('on');$('#race').innerHTML='';if(!S.f.raceOutro){S.f.raceOutro=1;await say('G','Und? <b>Kernlos glücklich?</b> … Kommt drauf an, ne? Genau das ist die Antwort für die Klausur. Aber bitte mit Begründung.')}render()}}
 
 /* ---------- 14. TITEL, MENÜ, START ---------- */
 function renderTitle(){const Tt=$('#title');const sv=loadSave();['#hud','#inv','#btnG'].forEach(s=>$(s).style.display='none');updQ();
@@ -1369,10 +1401,10 @@ function renderTitle(){const Tt=$('#title');const sv=loadSave();['#hud','#inv','
      <ellipse cx="120" cy="110" rx="70" ry="48"/><ellipse cx="128" cy="112" rx="24" ry="18"/><circle cx="96" cy="92" r="5"/><circle cx="150" cy="130" r="4"/>
      <circle cx="560" cy="70" r="40"/><circle cx="560" cy="70" r="24"/><path d="M520 70h80M560 30v80"/><text x="700" y="80" font-size="30" fill="#F3F0E4" stroke="none" font-family="AMono, monospace">5′-AUG-3′</text></g></svg>
    <div class="tl"><h1>Spleiß<br><span>drauf!</span></h1><div class="subt">Kernlos glücklich?</div>
-    <div class="row"><button class="btn primary" id="tnew" style="font-size:24px">▶ Neues Spiel</button>${sv&&sv.scene!=='title'?'<button class="btn amber" id="tcont" style="font-size:24px">Weiterspielen</button>':''}<button class="btn" id="tfs">Vollbild</button></div></div>
+    <div class="row"><button class="btn primary" id="tnew" style="font-size:24px">▶ Neues Spiel</button>${sv&&sv.scene!=='title'?'<button class="btn amber" id="tcont" style="font-size:24px">Weiterspielen</button>':''}${sv&&sv.f&&sv.f.raceDone?'<button class="btn amber" id="tmini">✊ Mini-Game</button>':''}<button class="btn" id="tfs">Vollbild</button></div></div>
    <div class="tr"><div class="bubble">Euer Gequatsche im Kurs war ja nicht mehr auszuhalten. Hab mich daher mal schrumpfen lassen und bin in eine Zelle geflüchtet. Vielleicht hab ich ja hier Ruhe!</div><img class="mgbig" src="${MG_FULL}" alt="Mister G"></div>
    <div class="foot">Ein Bio-LK-Adventure zur Proteinbiosynthese · mit Mister G · Prototyp v0.6</div>`;
-  $('#tnew').onclick=newGame;if($('#tcont'))$('#tcont').onclick=()=>{S=Object.assign(fresh(),sv);render()};$('#tfs').onclick=fullscreen}
+  $('#tnew').onclick=newGame;if($('#tcont'))$('#tcont').onclick=()=>{S=Object.assign(fresh(),sv);render()};$('#tfs').onclick=fullscreen;if($('#tmini'))$('#tmini').onclick=()=>miniGame()}
 async function newGame(){S=fresh();S.scene='bakt';save();render();busy=true;
   await say('G','… Na toll. Kaum bin ich weg, lauft ihr mir hinterher. Bis in die Zelle. Dann lernen wir halt hier was.');
   await say('G','Euer Auftrag steht immer hier oben: <b>Gen G7</b> soll zu einem Protein werden – erst im Bakterium, dann in einer Eukaryotenzelle.',{hl:'#task'});
@@ -1383,9 +1415,9 @@ async function newGame(){S=fresh();S.scene='bakt';save();render();busy=true;
   await say('G','Erste Station: <b>Club Kernlos</b> – ein Bakterium. Kein Zellkern, kein Türsteher. Rein da.');
   busy=false;arrive('bakt')}
 function fullscreen(){const el=document.documentElement;try{(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){toast('Tipp: Über „Teilen → Zum Home-Bildschirm“ läuft das Spiel im Vollbild.')}}
-function menu(){if(busy)return;const box=openModal(`<h2>Menü</h2><div class="row"><button class="btn" id="m1">Vollbild</button><button class="btn" id="m2">Titelbild</button><button class="btn" id="m3">Lehrkraft-Menü</button></div>
+function menu(){if(busy)return;const box=openModal(`<h2>Menü</h2><div class="row"><button class="btn" id="m1">Vollbild</button><button class="btn" id="m2">Titelbild</button>${S.f.raceDone?'<button class="btn amber" id="m4">✊ Mini-Game</button>':''}<button class="btn" id="m3">Lehrkraft-Menü</button></div>
   <p class="sub" style="margin-top:16px">Der Spielstand wird automatisch auf diesem Gerät gespeichert.</p><div id="mt"></div>`,{closable:true});
-  $('#m1',box).onclick=fullscreen;$('#m2',box).onclick=()=>{closeModal();save();S.scene='title';render()};
+  $('#m1',box).onclick=fullscreen;if($('#m4',box))$('#m4',box).onclick=()=>{closeModal();miniGame()};$('#m2',box).onclick=()=>{closeModal();save();S.scene='title';render()};
   $('#m3',box).onclick=()=>{$('#mt',box).innerHTML=`<div class="row"><input id="mcode" placeholder="Code" style="font-size:22px;padding:6px 12px;border:2px solid #C9BFA8;border-radius:10px;width:160px"><button class="btn" id="mok">OK</button></div>`;
     $('#mok',box).onclick=()=>{if($('#mcode',box).value.trim().toUpperCase()!=='G7'){toast('Falscher Code.');return}
       $('#mt',box).innerHTML=`<div class="row"><button class="btn" id="j2">Zu Akt 2 springen</button><button class="btn" id="j3">Alles freischalten (Finale testen)</button><button class="btn" id="j4">+30 ATP</button><button class="btn warn" id="j0">Fortschritt löschen</button></div>`;
